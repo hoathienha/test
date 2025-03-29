@@ -1,0 +1,91 @@
+async function fetchAndProcessGrid(url) {
+    try {
+        // Fetch the document content
+        let response = await fetch(url);
+        let text = await response.text();
+
+        // Parse HTML and extract text
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(text, "text/html");
+        let content = doc.body.innerText.trim(); // Extract raw text
+
+        //console.log("Fetched Data:\n");
+        //console.log(content);
+
+        // Convert text into an array of lines
+        let lines = content.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        //console.log(lines);
+
+        // Validate headers
+        if (!lines.includes("x-coordinate") & !lines.includes("y-coordinate") & !lines.includes("Character")) {
+            console.error("Error: The data does not contain the expected 'x-coordinate', 'y-coordinate', and 'Character' columns.");
+            return;
+        }
+        
+        // Determine where data row should start (exclude headers)
+        let startIndex = -1;
+
+        for (let str of lines) {
+            if (/^[^a-zA-Z0-9]$/.test(str)||(!isNaN(str) && Number.isInteger(Number(str)))) {
+                startIndex = lines.indexOf(str);
+                break; // Stop iteration
+            }
+        }
+        if (startIndex < 0) return;
+        let gridData = [];
+        let tempGroup = { x: null, y: null, char: null };
+
+        for (let item of lines.slice(startIndex)) {
+            if (!isNaN(item) && Number.isInteger(Number(item))) {
+                if (tempGroup.x === null) {
+                    tempGroup.x = Number(item);
+                } else if (tempGroup.y === null) {
+                    tempGroup.y = Number(item);
+                }
+            } else {
+              if (tempGroup.char === null){
+                if (item === null || (typeof item === "string" && item.trim() === "")) {
+                    tempGroup.char = " "; // fill in space if character not specified
+                }else if(/^[^a-zA-Z0-9]$/.test(item)) {
+                  tempGroup.char = item;
+                }
+              }
+            }
+
+        // If a full set (x, y, z) is formed, push and reset
+        if (tempGroup.x !== null && tempGroup.y !== null && tempGroup.char !== null) {
+            gridData.push(tempGroup);
+            tempGroup = { x: null, y: null, char: null }; // Reset tempGroup for the next set
+        }
+
+    }
+//console.log(gridData);
+        // Validate parsed data
+        if (gridData.some(item => isNaN(item.x) || isNaN(item.y) || typeof item.char !== "string")) {
+            console.error("Error: Invalid data format.");
+            return;
+        }
+
+        // Determine grid size
+        let maxX = Math.max(...gridData.map(item => item.x), 0);
+        let maxY = Math.max(...gridData.map(item => item.y), 0);
+
+        // Initialize grid with spaces
+        let grid = Array.from({ length: maxY + 1 }, () => Array(maxX + 1).fill(" "));
+
+        // Populate the grid with characters from the data
+        gridData.forEach(({ x, y, char }) => {
+            grid[y][x] = char;
+        });
+
+        // Print the formatted grid
+        console.log("\n=== Draw ===");
+        grid.slice().reverse().forEach(row => console.log(row.join("")));
+
+    } catch (error) {
+        console.error("Error fetching or processing data:", error);
+    }
+}
+
+// Run the function
+fetchAndProcessGrid("");//"https://hoathienha.github.io/test/"
