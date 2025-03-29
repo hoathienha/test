@@ -52,14 +52,13 @@ async function fetchAndProcessGrid(url) {
               }
             }
 
-        // If a full set (x, y, z) is formed, push and reset
-        if (tempGroup.x !== null && tempGroup.y !== null && tempGroup.char !== null) {
-            gridData.push(tempGroup);
-            tempGroup = { x: null, y: null, char: null }; // Reset tempGroup for the next set
+            // If a full set (x, y, z) is formed, push and reset
+            if (tempGroup.x !== null && tempGroup.y !== null && tempGroup.char !== null) {
+                gridData.push(tempGroup);
+                tempGroup = { x: null, y: null, char: null }; // Reset tempGroup for the next set
+            }
         }
-
-    }
-//console.log(gridData);
+        //console.log(gridData);
         // Validate parsed data
         if (gridData.some(item => isNaN(item.x) || isNaN(item.y) || typeof item.char !== "string")) {
             console.error("Error: Invalid data format.");
